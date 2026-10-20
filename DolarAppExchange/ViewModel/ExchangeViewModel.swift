@@ -112,16 +112,8 @@ final class ExchangeViewModel {
     private func decimal(from value: String) -> Decimal? {
         Decimal(string: value.replacingOccurrences(of: ",", with: "."))
     }
-
-    private func format(_ value: Decimal) -> String { // not used
-        NSDecimalNumber(decimal: value)
-            .rounding(accordingToBehavior: nil)
-            .stringValue
-    }
     
     private func formatAmount(_ value: Decimal) -> String {
-        print("*** print FORMAT VALUE:", value)
-        
         return value.formatted(
             .number
                 .locale(Locale(identifier: "en_US"))
