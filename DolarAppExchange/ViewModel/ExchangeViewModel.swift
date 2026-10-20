@@ -4,27 +4,34 @@ import Observation
 @MainActor
 @Observable
 final class ExchangeViewModel {
-    private(set) var currencies: [String] = []
-    private(set) var selectedCurrency: String = "MXN"
-    
-    var exchangeRateText: String {
-        guard let exchangeRate else {
-            return ""
-        }
-
-        return "1 USDc = \(formatRate(exchangeRate.bid)) \(selectedCurrency)"
+    private enum Field {
+        case usdc
+        case currency
     }
 
-    var usdcAmount: String = ""
-    var currencyAmount: String = ""
+    private(set) var currencies: [String] = []
+    private(set) var selectedCurrency: String = "MXN"
+
+    private(set) var usdcAmount: String = ""
+    private(set) var currencyAmount: String = ""
 
     private(set) var isLoading = false
     private(set) var errorMessage: String?
     private(set) var isUSDCFirst = true
 
+    var exchangeRateText: String {
+        guard let exchangeRate else { return "" }
+
+        let rate = isUSDCFirst ? exchangeRate.bid : exchangeRate.ask
+
+        return "1 USDc = \(formatRate(rate)) \(selectedCurrency)"
+    }
+
     private let repository: ExchangeRepositoryProtocol
 
     private var exchangeRate: ExchangeRate?
+    private var lastEditedField: Field = .usdc
+    private var rateRequestID = UUID()
 
     init(repository: ExchangeRepositoryProtocol) {
         self.repository = repository
@@ -38,92 +45,180 @@ final class ExchangeViewModel {
         isLoading = true
         errorMessage = nil
 
-        currencies = await repository.fetchCurrencies()
+        let fetchedCurrencies = await repository.fetchCurrencies()
+        currencies = fetchedCurrencies
 
-        if !currencies.contains(selectedCurrency),
-           let firstCurrency = currencies.first {
+        guard let firstCurrency = fetchedCurrencies.first else {
+            errorMessage = "Unable to load currencies."
+            isLoading = false
+            return
+        }
+
+        if !fetchedCurrencies.contains(selectedCurrency) {
             selectedCurrency = firstCurrency
         }
 
-        do {
-            exchangeRate = try await repository.fetchRate(
-                for: selectedCurrency
-            )
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-
-        isLoading = false
+        await loadRate(for: selectedCurrency)
     }
 
     func selectCurrency(_ currency: String) async {
-        guard currency != selectedCurrency else { return }
-
-        selectedCurrency = currency
-        isLoading = true
-        errorMessage = nil
-
-        do {
-            exchangeRate = try await repository.fetchRate(for: currency)
-            recalculate()
-        } catch {
-            errorMessage = error.localizedDescription
+        guard
+            currency != selectedCurrency,
+            currencies.contains(currency)
+        else {
+            return
         }
 
-        isLoading = false
+        selectedCurrency = currency
+
+        await loadRate(for: currency)
     }
 
     func updateUSDCAmount(_ value: String) {
         usdcAmount = value
+        lastEditedField = .usdc
 
-        guard let amount = decimal(from: value), let bid = exchangeRate?.bid else {
+        guard
+            let amount = decimal(from: value),
+            let exchangeRate
+        else {
             currencyAmount = ""
-            
             return
         }
 
-        currencyAmount = formatAmount(amount * bid)
+        if isUSDCFirst {
+            // Selling USDc → receiving fiat
+            currencyAmount = formatAmount(amount * exchangeRate.bid)
+        } else {
+            // Buying USDc → paying fiat
+            currencyAmount = formatAmount(amount * exchangeRate.ask)
+        }
     }
 
     func updateCurrencyAmount(_ value: String) {
         currencyAmount = value
+        lastEditedField = .currency
 
-        guard let amount = decimal(from: value), let ask = exchangeRate?.ask, ask != 0 else {
+        guard
+            let amount = decimal(from: value),
+            let exchangeRate
+        else {
             usdcAmount = ""
-            
             return
         }
 
-        usdcAmount = formatAmount(amount / ask)
+        if isUSDCFirst {
+            // Selling USDc → receiving fiat
+            guard exchangeRate.bid != 0 else {
+                usdcAmount = ""
+                return
+            }
+
+            usdcAmount = formatAmount(amount / exchangeRate.bid)
+        } else {
+            // Buying USDc → paying fiat
+            guard exchangeRate.ask != 0 else {
+                usdcAmount = ""
+                return
+            }
+
+            usdcAmount = formatAmount(amount / exchangeRate.ask)
+        }
     }
 
     func swap() {
         isUSDCFirst.toggle()
+        recalculate()
+    }
+
+    // MARK: - Private
+
+    private func loadRate(for currency: String) async {
+        let requestID = UUID()
+        rateRequestID = requestID
+
+        isLoading = true
+        errorMessage = nil
+
+        exchangeRate = nil
+        clearCalculatedAmount()
+
+        defer {
+            if requestID == rateRequestID {
+                isLoading = false
+            }
+        }
+
+        do {
+            let rate = try await repository.fetchRate(for: currency)
+
+            guard requestID == rateRequestID else {
+                return
+            }
+
+            exchangeRate = rate
+            recalculate()
+        } catch is CancellationError {
+            return
+        } catch {
+            guard requestID == rateRequestID else {
+                return
+            }
+
+            errorMessage = error.localizedDescription
+        }
     }
 
     private func recalculate() {
-        if !usdcAmount.isEmpty {
+        switch lastEditedField {
+        case .usdc:
             updateUSDCAmount(usdcAmount)
-        } else if !currencyAmount.isEmpty {
+
+        case .currency:
             updateCurrencyAmount(currencyAmount)
         }
     }
 
-    private func decimal(from value: String) -> Decimal? {
-        Decimal(string: value.replacingOccurrences(of: ",", with: "."))
+    private func clearCalculatedAmount() {
+        switch lastEditedField {
+        case .usdc:
+            currencyAmount = ""
+
+        case .currency:
+            usdcAmount = ""
+        }
     }
-    
+
+    private func decimal(from value: String) -> Decimal? {
+        let normalized = value
+            .trimmingCharacters(in: .whitespaces)
+            .replacingOccurrences(of: ",", with: ".")
+
+        guard normalized.wholeMatch(of: /\d+(\.\d*)?|\.\d+/) != nil else {
+            return nil
+        }
+
+        return Decimal(
+            string: normalized,
+            locale: Locale(identifier: "en_US_POSIX")
+        )
+    }
+
     private func formatAmount(_ value: Decimal) -> String {
-        return value.formatted(
+        value.formatted(
             .number
                 .locale(Locale(identifier: "en_US"))
-                .grouping(.automatic)
+                .grouping(.never)
                 .precision(.fractionLength(0...2))
         )
     }
 
-    
     private func formatRate(_ value: Decimal) -> String {
-        NSDecimalNumber(decimal: value).stringValue
+        value.formatted(
+            .number
+                .locale(Locale(identifier: "en_US"))
+                .grouping(.automatic)
+                .precision(.fractionLength(2...6))
+        )
     }
 }

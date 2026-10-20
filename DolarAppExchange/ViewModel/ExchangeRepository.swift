@@ -8,7 +8,7 @@ protocol ExchangeRepositoryProtocol {
 final class ExchangeRepository: ExchangeRepositoryProtocol {
     private let apiManager: APIManagingProtocol
 
-    private let fallbackCurrencies = ["MXN", "ARS", "BRL", "COP", "EURc"]
+    private let fallbackCurrencies = ["MXN", "ARS", "BRL", "COP"]
 
     init(apiManager: APIManagingProtocol = APIManager()) {
         self.apiManager = apiManager
