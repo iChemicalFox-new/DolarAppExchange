@@ -24,25 +24,25 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		5BFE755230861C7100EED522 /* DollarAppExchange.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DollarAppExchange.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		5BFE756130861C7300EED522 /* DollarAppExchangeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DollarAppExchangeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		5BFE756B30861C7400EED522 /* DollarAppExchangeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DollarAppExchangeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		5BFE755230861C7100EED522 /* DolarAppExchange.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DolarAppExchange.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5BFE756130861C7300EED522 /* DolarAppExchangeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DolarAppExchangeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		5BFE756B30861C7400EED522 /* DolarAppExchangeUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DolarAppExchangeUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		5BFE755430861C7100EED522 /* DollarAppExchange */ = {
+		5BFE755430861C7100EED522 /* DolarAppExchange */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = DollarAppExchange;
+			path = DolarAppExchange;
 			sourceTree = "<group>";
 		};
-		5BFE756430861C7300EED522 /* DollarAppExchangeTests */ = {
+		5BFE756430861C7300EED522 /* DolarAppExchangeTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = DollarAppExchangeTests;
+			path = DolarAppExchangeTests;
 			sourceTree = "<group>";
 		};
-		5BFE756E30861C7400EED522 /* DollarAppExchangeUITests */ = {
+		5BFE756E30861C7400EED522 /* DolarAppExchangeUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = DollarAppExchangeUITests;
+			path = DolarAppExchangeUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -75,9 +75,9 @@
 		5BFE754930861C7100EED522 = {
 			isa = PBXGroup;
 			children = (
-				5BFE755430861C7100EED522 /* DollarAppExchange */,
-				5BFE756430861C7300EED522 /* DollarAppExchangeTests */,
-				5BFE756E30861C7400EED522 /* DollarAppExchangeUITests */,
+				5BFE755430861C7100EED522 /* DolarAppExchange */,
+				5BFE756430861C7300EED522 /* DolarAppExchangeTests */,
+				5BFE756E30861C7400EED522 /* DolarAppExchangeUITests */,
 				5BFE755330861C7100EED522 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -85,9 +85,9 @@
 		5BFE755330861C7100EED522 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				5BFE755230861C7100EED522 /* DollarAppExchange.app */,
-				5BFE756130861C7300EED522 /* DollarAppExchangeTests.xctest */,
-				5BFE756B30861C7400EED522 /* DollarAppExchangeUITests.xctest */,
+				5BFE755230861C7100EED522 /* DolarAppExchange.app */,
+				5BFE756130861C7300EED522 /* DolarAppExchangeTests.xctest */,
+				5BFE756B30861C7400EED522 /* DolarAppExchangeUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -95,9 +95,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		5BFE755130861C7100EED522 /* DollarAppExchange */ = {
+		5BFE755130861C7100EED522 /* DolarAppExchange */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 5BFE757530861C7400EED522 /* Build configuration list for PBXNativeTarget "DollarAppExchange" */;
+			buildConfigurationList = 5BFE757530861C7400EED522 /* Build configuration list for PBXNativeTarget "DolarAppExchange" */;
 			buildPhases = (
 				5BFE754E30861C7100EED522 /* Sources */,
 				5BFE754F30861C7100EED522 /* Frameworks */,
@@ -108,18 +108,18 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				5BFE755430861C7100EED522 /* DollarAppExchange */,
+				5BFE755430861C7100EED522 /* DolarAppExchange */,
 			);
-			name = DollarAppExchange;
+			name = DolarAppExchange;
 			packageProductDependencies = (
 			);
 			productName = DollarAppExchange;
-			productReference = 5BFE755230861C7100EED522 /* DollarAppExchange.app */;
+			productReference = 5BFE755230861C7100EED522 /* DolarAppExchange.app */;
 			productType = "com.apple.product-type.application";
 		};
-		5BFE756030861C7300EED522 /* DollarAppExchangeTests */ = {
+		5BFE756030861C7300EED522 /* DolarAppExchangeTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 5BFE757830861C7400EED522 /* Build configuration list for PBXNativeTarget "DollarAppExchangeTests" */;
+			buildConfigurationList = 5BFE757830861C7400EED522 /* Build configuration list for PBXNativeTarget "DolarAppExchangeTests" */;
 			buildPhases = (
 				5BFE755D30861C7300EED522 /* Sources */,
 				5BFE755E30861C7300EED522 /* Frameworks */,
@@ -131,18 +131,18 @@
 				5BFE756330861C7300EED522 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				5BFE756430861C7300EED522 /* DollarAppExchangeTests */,
+				5BFE756430861C7300EED522 /* DolarAppExchangeTests */,
 			);
-			name = DollarAppExchangeTests;
+			name = DolarAppExchangeTests;
 			packageProductDependencies = (
 			);
 			productName = DollarAppExchangeTests;
-			productReference = 5BFE756130861C7300EED522 /* DollarAppExchangeTests.xctest */;
+			productReference = 5BFE756130861C7300EED522 /* DolarAppExchangeTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		5BFE756A30861C7300EED522 /* DollarAppExchangeUITests */ = {
+		5BFE756A30861C7300EED522 /* DolarAppExchangeUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 5BFE757B30861C7400EED522 /* Build configuration list for PBXNativeTarget "DollarAppExchangeUITests" */;
+			buildConfigurationList = 5BFE757B30861C7400EED522 /* Build configuration list for PBXNativeTarget "DolarAppExchangeUITests" */;
 			buildPhases = (
 				5BFE756730861C7300EED522 /* Sources */,
 				5BFE756830861C7300EED522 /* Frameworks */,
@@ -154,13 +154,13 @@
 				5BFE756D30861C7400EED522 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				5BFE756E30861C7400EED522 /* DollarAppExchangeUITests */,
+				5BFE756E30861C7400EED522 /* DolarAppExchangeUITests */,
 			);
-			name = DollarAppExchangeUITests;
+			name = DolarAppExchangeUITests;
 			packageProductDependencies = (
 			);
 			productName = DollarAppExchangeUITests;
-			productReference = 5BFE756B30861C7400EED522 /* DollarAppExchangeUITests.xctest */;
+			productReference = 5BFE756B30861C7400EED522 /* DolarAppExchangeUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -186,7 +186,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 5BFE754D30861C7100EED522 /* Build configuration list for PBXProject "DollarAppExchange" */;
+			buildConfigurationList = 5BFE754D30861C7100EED522 /* Build configuration list for PBXProject "DolarAppExchange" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -200,9 +200,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				5BFE755130861C7100EED522 /* DollarAppExchange */,
-				5BFE756030861C7300EED522 /* DollarAppExchangeTests */,
-				5BFE756A30861C7300EED522 /* DollarAppExchangeUITests */,
+				5BFE755130861C7100EED522 /* DolarAppExchange */,
+				5BFE756030861C7300EED522 /* DolarAppExchangeTests */,
+				5BFE756A30861C7300EED522 /* DolarAppExchangeUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -258,12 +258,12 @@
 /* Begin PBXTargetDependency section */
 		5BFE756330861C7300EED522 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 5BFE755130861C7100EED522 /* DollarAppExchange */;
+			target = 5BFE755130861C7100EED522 /* DolarAppExchange */;
 			targetProxy = 5BFE756230861C7300EED522 /* PBXContainerItemProxy */;
 		};
 		5BFE756D30861C7400EED522 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 5BFE755130861C7100EED522 /* DollarAppExchange */;
+			target = 5BFE755130861C7100EED522 /* DolarAppExchange */;
 			targetProxy = 5BFE756C30861C7400EED522 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -467,7 +467,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DollarAppExchange.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DollarAppExchange";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DolarAppExchange.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DolarAppExchange";
 			};
 			name = Debug;
 		};
@@ -488,7 +488,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DollarAppExchange.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DollarAppExchange";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/DolarAppExchange.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/DolarAppExchange";
 			};
 			name = Release;
 		};
@@ -533,7 +533,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		5BFE754D30861C7100EED522 /* Build configuration list for PBXProject "DollarAppExchange" */ = {
+		5BFE754D30861C7100EED522 /* Build configuration list for PBXProject "DolarAppExchange" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				5BFE757330861C7400EED522 /* Debug */,
@@ -542,7 +542,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		5BFE757530861C7400EED522 /* Build configuration list for PBXNativeTarget "DollarAppExchange" */ = {
+		5BFE757530861C7400EED522 /* Build configuration list for PBXNativeTarget "DolarAppExchange" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				5BFE757630861C7400EED522 /* Debug */,
@@ -551,7 +551,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		5BFE757830861C7400EED522 /* Build configuration list for PBXNativeTarget "DollarAppExchangeTests" */ = {
+		5BFE757830861C7400EED522 /* Build configuration list for PBXNativeTarget "DolarAppExchangeTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				5BFE757930861C7400EED522 /* Debug */,
@@ -560,7 +560,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		5BFE757B30861C7400EED522 /* Build configuration list for PBXNativeTarget "DollarAppExchangeUITests" */ = {
+		5BFE757B30861C7400EED522 /* Build configuration list for PBXNativeTarget "DolarAppExchangeUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				5BFE757C30861C7400EED522 /* Debug */,

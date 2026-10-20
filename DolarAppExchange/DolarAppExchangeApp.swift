@@ -1,15 +1,8 @@
-//
-//  DollarAppExchangeApp.swift
-//  DollarAppExchange
-//
-//  Created by Алексей on 19. 10. 2026..
-//
-
 import SwiftUI
 import SwiftData
 
 @main
-struct DollarAppExchangeApp: App {
+struct DolarAppExchangeApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Item.self,
@@ -25,7 +18,7 @@ struct DollarAppExchangeApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ExchangeView()
         }
         .modelContainer(sharedModelContainer)
     }

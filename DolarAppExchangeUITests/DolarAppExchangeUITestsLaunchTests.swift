@@ -1,13 +1,6 @@
-//
-//  DollarAppExchangeUITestsLaunchTests.swift
-//  DollarAppExchangeUITests
-//
-//  Created by Алексей on 19. 10. 2026..
-//
-
 import XCTest
 
-final class DollarAppExchangeUITestsLaunchTests: XCTestCase {
+final class DolarAppExchangeUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true

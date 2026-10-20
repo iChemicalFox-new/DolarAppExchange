@@ -1,14 +1,7 @@
-//
-//  DollarAppExchangeTests.swift
-//  DollarAppExchangeTests
-//
-//  Created by Алексей on 19. 10. 2026..
-//
-
 import XCTest
-@testable import DollarAppExchange
+@testable import DolarAppExchange
 
-final class DollarAppExchangeTests: XCTestCase {
+final class DolarAppExchangeTests: XCTestCase {
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.
