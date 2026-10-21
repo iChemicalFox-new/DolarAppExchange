@@ -147,7 +147,13 @@ final class ExchangeViewModel {
               !(error is CancellationError),
               (error as? URLError)?.code != .cancelled else { return }
 
-        errorMessage = "Unable to load exchange rates. Check your connection and try again."
+        switch (error as? URLError)?.code {
+        case .notConnectedToInternet, .networkConnectionLost, .timedOut,
+             .cannotFindHost, .cannotConnectToHost, .dnsLookupFailed:
+            errorMessage = "Unable to load exchange rates. Check your connection and try again."
+        default:
+            errorMessage = "Unable to load exchange rates. Please try again."
+        }
     }
 
     private func recalculate() {
