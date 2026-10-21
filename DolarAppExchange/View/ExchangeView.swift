@@ -4,35 +4,53 @@ struct ExchangeView: View {
     @State private var viewModel = ExchangeViewModel()
     @State private var isCurrencyPickerPresented = false
     @State private var currencyPickerHeight: CGFloat = 300
-    
+    @State private var requestedCurrency: String?
+    @State private var reloadID = 0
+
     var body: some View {
-        VStack(spacing: 0) {
-            topSection
-            exchangeInfo
-            bottomSection
-            
-            Spacer()
+        ScrollView {
+            VStack(spacing: 0) {
+                topSection
+                exchangeInfo
+                bottomSection
+                if let message = viewModel.errorMessage {
+                    VStack(spacing: 12) {
+                        Text(message)
+                            .multilineTextAlignment(.center)
+                        Button("Try again") { reloadID += 1 }
+                    }
+                    .padding()
+                } else if !viewModel.isLoading && viewModel.exchangeRateText.isEmpty {
+                    Button("Load exchange rates") { reloadID += 1 }
+                        .padding()
+                }
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color.white)
-        .ignoresSafeArea(edges: .top)
-        .task {
-            await viewModel.load()
+        .background(Color(.systemBackground))
+        .scrollDismissesKeyboard(.interactively)
+        .task(id: reloadID) {
+            if let requestedCurrency, requestedCurrency != viewModel.selectedCurrency {
+                await viewModel.selectCurrency(requestedCurrency)
+            } else {
+                await viewModel.load()
+            }
         }
         .sheet(isPresented: $isCurrencyPickerPresented) {
             CurrencyPickerView(
                 currencies: viewModel.currencies,
                 selectedCurrency: viewModel.selectedCurrency
             ) { currency in
-                Task {
-                    await viewModel.selectCurrency(currency)
-                    isCurrencyPickerPresented = false
+                isCurrencyPickerPresented = false
+                if currency != viewModel.selectedCurrency {
+                    requestedCurrency = currency
+                    reloadID += 1
                 }
             } onHeightChange: { height in
                 currencyPickerHeight = height
             }
             .presentationDetents([
-                .height(currencyPickerHeight)
+                .height(min(currencyPickerHeight, 500)), .large
             ])
             .presentationDragIndicator(.visible)
             .presentationCornerRadius(Constants.pickerCornerRadius)
@@ -76,7 +94,7 @@ struct ExchangeView: View {
         .padding(.horizontal, Constants.horizontalPadding)
         .padding(.top, Constants.sectionVerticalPadding)
         .frame(maxWidth: .infinity)
-        .background(Color.white)
+        .background(Color(.systemBackground))
     }
 
     private func usdcRow(sign: String) -> some View {
@@ -114,6 +132,7 @@ struct ExchangeView: View {
             ),
             showsCurrencySelector: true
         ) {
+            guard !viewModel.currencies.isEmpty else { return }
             isCurrencyPickerPresented = true
         }
     }
@@ -122,42 +141,41 @@ struct ExchangeView: View {
         ZStack {
             VStack(spacing: 0) {
                 Color(.systemGray6)
-                Color.white
+                Color(.systemBackground)
             }
-
             Divider()
-
-            Text(viewModel.exchangeRateText)
-                .font(.system(size: 16, weight: .regular))
-                .multilineTextAlignment(.center)
-                .foregroundStyle(Color.brandGreen)
-                .padding(.horizontal, Constants.rateHorizontalPadding)
-                .padding(.vertical, Constants.rateVerticalPadding)
-                .background(
-                    Capsule()
-                        .fill(Color.white)
-                )
-                .overlay(
-                    Capsule()
-                        .stroke(Color(.systemGray4), lineWidth: 1)
-                )
-
-            HStack {
+            HStack(spacing: 12) {
                 Button {
                     viewModel.swap()
                 } label: {
                     Image(systemName: "arrow.down")
-                        .font(.system(size: 14, weight: .regular))
+                        .font(.system(size: 14))
                         .foregroundStyle(.white)
                         .frame(width: Constants.swapButtonSize, height: Constants.swapButtonSize)
                         .background(Color.brandGreen)
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Swap currencies")
 
-                Spacer()
+                Group {
+                    if viewModel.isLoading {
+                        ProgressView("Loading rates")
+                    } else {
+                        Text(viewModel.exchangeRateText.isEmpty ? "Rate unavailable" : viewModel.exchangeRateText)
+                    }
+                }
+                .font(.system(size: 16))
+                .lineLimit(1)
+                .minimumScaleFactor(0.65)
+                .foregroundStyle(Color.brandGreen)
+                .padding(.horizontal, Constants.rateHorizontalPadding)
+                .padding(.vertical, Constants.rateVerticalPadding)
+                .background(Capsule().fill(Color(.systemBackground)))
+                .overlay(Capsule().stroke(Color(.systemGray4), lineWidth: 1))
+                .frame(maxWidth: .infinity)
             }
-            .padding(.leading, Constants.swapButtonLeadingPadding)
+            .padding(.horizontal, Constants.swapButtonLeadingPadding)
         }
         .frame(height: Constants.exchangeInfoHeight)
     }
@@ -170,6 +188,7 @@ struct ExchangeCurrencyRow: View {
     let sign: String
 
     @Binding var amount: String
+    @FocusState private var isAmountFocused: Bool
 
     var showsCurrencySelector = false
     var onCurrencyTap: (() -> Void)?
@@ -177,12 +196,13 @@ struct ExchangeCurrencyRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: Constants.spacing) {
             currencyInfo
+                .layoutPriority(1)
 
-            Spacer()
+            Spacer(minLength: 8)
 
             amountField
         }
-        .frame(height: Constants.rowHeight)
+        .frame(minHeight: Constants.rowHeight)
     }
     
     private var currencyInfo: some View {
@@ -213,6 +233,7 @@ struct ExchangeCurrencyRow: View {
                 currencyTitleContent
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Choose currency")
         } else {
             currencyTitleContent
         }
@@ -237,22 +258,53 @@ struct ExchangeCurrencyRow: View {
             Text("\(sign) $")
                 .font(.system(size: 32, weight: .medium))
                 .foregroundStyle(amount.isEmpty ? .secondary : .primary)
+                .fixedSize()
 
-            TextField("0", text: $amount)
-                .keyboardType(.decimalPad)
-                .multilineTextAlignment(.trailing)
+            // Measure the amount within the available width to keep the sign beside it.
+            Text(amount.isEmpty ? "0" : amount)
                 .font(.system(size: 32, weight: .medium))
-                .fixedSize(horizontal: true, vertical: false)
+                .lineLimit(1)
+                .hidden()
+                .overlay {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        // Full text sets the scrollable width; the outer text bounds the viewport.
+                        Text(amount.isEmpty ? "0" : amount)
+                            .font(.system(size: 32, weight: .medium))
+                            .fixedSize(horizontal: true, vertical: false)
+                            .hidden()
+                            .overlay {
+                                TextField("0", text: $amount)
+                                    .textFieldStyle(.plain)
+                                    .keyboardType(.decimalPad)
+                                    .multilineTextAlignment(.trailing)
+                                    .font(.system(size: 32, weight: .medium))
+                                    .frame(minWidth: 0, maxWidth: .infinity)
+                                    .focused($isAmountFocused)
+                                    .accessibilityLabel("\(currency) amount")
+                                    .toolbar {
+                                        if isAmountFocused {
+                                            ToolbarItemGroup(placement: .keyboard) {
+                                                Spacer()
+                                                Button("Done") { isAmountFocused = false }
+                                            }
+                                        }
+                                    }
+                            }
+                    }
+                    .defaultScrollAnchor(.trailing)
+                    .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+                }
         }
+        .frame(maxWidth: .infinity, alignment: .trailing)
     }
 }
 
-// MARK: - Constrants
+// MARK: - Constants
 
 private extension ExchangeView {
     enum Constants {
         static let horizontalPadding: CGFloat = 20
-        static let titleTopPadding: CGFloat = 117
+        static let titleTopPadding: CGFloat = 64
         static let titleToRowSpacing: CGFloat = 28
         static let sectionVerticalPadding: CGFloat = 60
         static let currencyRowVerticalOffset: CGFloat = 30

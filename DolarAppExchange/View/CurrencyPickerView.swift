@@ -10,24 +10,26 @@ struct CurrencyPickerView: View {
     private var dismiss
     
     var body: some View {
-        VStack(spacing: 0) {
-            header
-            
-            ForEach(currencies, id: \.self) { currency in
-                currencyRow(currency)
+        ScrollView {
+            VStack(spacing: 0) {
+                header
+                
+                ForEach(currencies, id: \.self) { currency in
+                    currencyRow(currency)
+                }
             }
-        }
-        .padding(.horizontal, Constants.horizontalPadding)
-        .background(Color.white)
-        .background {
-            GeometryReader { proxy in
-                Color.clear
-                    .onAppear {
-                        onHeightChange(proxy.size.height)
-                    }
-                    .onChange(of: proxy.size.height) { _, newHeight in
-                        onHeightChange(newHeight)
-                    }
+            .padding(.horizontal, Constants.horizontalPadding)
+            .background(Color(.systemBackground))
+            .background {
+                GeometryReader { proxy in
+                    Color.clear
+                        .onAppear {
+                            onHeightChange(proxy.size.height)
+                        }
+                        .onChange(of: proxy.size.height) { _, newHeight in
+                            onHeightChange(newHeight)
+                        }
+                }
             }
         }
     }
@@ -45,9 +47,10 @@ struct CurrencyPickerView: View {
             } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 20))
-                    .foregroundStyle(Color.black)
+                    .foregroundStyle(Color.primary)
                     .frame(width: Constants.xmarkSize, height: Constants.xmarkSize)
             }
+            .accessibilityLabel("Close currency picker")
         }
         .padding(.vertical, Constants.headerVerticalPadding)
         .padding(.top, Constants.headerTopPadding)
