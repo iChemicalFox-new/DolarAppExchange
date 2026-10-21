@@ -357,24 +357,46 @@ struct ExchangeCurrencyRow: View {
         .frame(height: Constants.amountFieldHeight)
         .frame(maxWidth: .infinity)
     }
+    
+    private func groupedAmount(_ text: String) -> String {
+        let parts = text.split(separator: ".", omittingEmptySubsequences: false)
+        let digits = Array(parts[0])
 
+        let integerPart = digits.enumerated().map { index, digit in
+            let needsSeparator = index > 0 && (digits.count - index).isMultiple(of: 3)
+            return (needsSeparator ? "\u{202F}" : "") + String(digit)
+        }
+        .joined()
+
+        guard parts.count == 2 else { return integerPart }
+
+        return integerPart + "." + String(parts[1])
+    }
+    
     private func amountPresentation(availableWidth: CGFloat) -> (text: String, fontSize: CGFloat, width: CGFloat) {
         let fullText = amount.isEmpty ? "0" : amount
+
+        let displayText = isAmountFocused ? fullText : groupedAmount(fullText)
+
         let textPadding: CGFloat = 2
         let usableWidth = max(1, availableWidth - textPadding)
 
-        let maximumTextWidth = textWidth(fullText, fontSize: Constants.amountMaximumFontSize)
+        let maximumTextWidth = textWidth(displayText, fontSize: Constants.amountMaximumFontSize)
 
         let fittedFontSize = min(
             Constants.amountMaximumFontSize,
-            max(Constants.amountMinimumFontSize, Constants.amountMaximumFontSize * usableWidth / max(maximumTextWidth, 1))
+            max(
+                Constants.amountMinimumFontSize,
+                Constants.amountMaximumFontSize
+                    * usableWidth / max(maximumTextWidth, 1)
+            )
         )
 
         let needsScientificNotation =
             !isAmountFocused
-            && textWidth(fullText, fontSize: Constants.amountMinimumFontSize) > usableWidth
+            && textWidth(displayText, fontSize: Constants.amountMinimumFontSize) > usableWidth
 
-        let displayedText = needsScientificNotation ? scientificAmount(fullText) : fullText
+        let displayedText = needsScientificNotation ? scientificAmount(fullText) : displayText
         let fontSize = needsScientificNotation ? Constants.amountMinimumFontSize : fittedFontSize
         let width = min(availableWidth, textWidth(displayedText, fontSize: fontSize) + textPadding)
 
