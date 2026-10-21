@@ -20,13 +20,15 @@ final class ExchangeRepository: ExchangeRepositoryProtocol {
             var seen = Set<String>()
             let currencies = response.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
                 .filter { !$0.isEmpty && $0.lowercased() != "usdc" && seen.insert($0).inserted }
+            
             return currencies.isEmpty ? fallbackCurrencies : currencies
         } catch {
-            // An unavailable currencies endpoint is expected; cancellation is not a failure.
+            // An unavailable currencies endpoint is expected; cancellation is not a failure
             try Task.checkCancellation()
             if error is CancellationError || (error as? URLError)?.code == .cancelled {
                 throw error
             }
+            
             return fallbackCurrencies
         }
     }
@@ -50,11 +52,12 @@ final class ExchangeRepository: ExchangeRepositoryProtocol {
         guard let date = parseDate(ticker.date) else {
             throw ExchangeRepositoryError.invalidDate
         }
+        
         return ExchangeRate(currency: currency, ask: ask, bid: bid, date: date)
     }
 
     private func parseDate(_ value: String) -> Date? {
-        // The documented response omits a timezone; interpret it as UTC.
+        // The documented response omits a timezone; interpret it as UTC
         let formatter = ISO8601DateFormatter()
         let formats: [ISO8601DateFormatter.Options] = [
             [.withInternetDateTime, .withFractionalSeconds],
@@ -66,6 +69,7 @@ final class ExchangeRepository: ExchangeRepositoryProtocol {
                 return date
             }
         }
+        
         return nil
     }
 }
@@ -77,9 +81,12 @@ enum ExchangeRepositoryError: LocalizedError {
 
     var errorDescription: String? {
         switch self {
-        case .tickerNotFound: return "Exchange rate is unavailable."
-        case .invalidRate: return "Invalid exchange rate received from server."
-        case .invalidDate: return "Invalid exchange rate date received from server."
+        case .tickerNotFound: 
+            return "Exchange rate is unavailable."
+        case .invalidRate: 
+            return "Invalid exchange rate received from server."
+        case .invalidDate: 
+            return "Invalid exchange rate date received from server."
         }
     }
 }

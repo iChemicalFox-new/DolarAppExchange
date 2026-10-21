@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct ExchangeView: View {
     @State private var viewModel = ExchangeViewModel()
@@ -6,41 +7,66 @@ struct ExchangeView: View {
     @State private var currencyPickerHeight: CGFloat = 300
     @State private var requestedCurrency: String?
     @State private var reloadID = 0
-
+    
+    @Environment(\.scenePhase) private var scenePhase
+    
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                topSection
-                exchangeInfo
-                bottomSection
-                if let message = viewModel.errorMessage {
-                    VStack(spacing: 12) {
-                        Text(message)
-                            .multilineTextAlignment(.center)
-                        Button("Try again") { reloadID += 1 }
-                    }
-                    .padding()
-                } else if !viewModel.isLoading && viewModel.exchangeRateText.isEmpty {
-                    Button("Load exchange rates") { reloadID += 1 }
-                        .padding()
+        VStack(spacing: 0) {
+            topSection
+            exchangeInfo
+            bottomSection
+            
+            if let message = viewModel.errorMessage {
+                networkError(message)
+            } else if viewModel.isRateStale {
+                rateWarning
+            } else if !viewModel.isLoading && viewModel.exchangeRateText.isEmpty {
+                Button("Load exchange rates") {
+                    reloadID += 1
                 }
+                .font(.footnote)
+                .padding(.top, 4)
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Color(.systemBackground))
-        .scrollDismissesKeyboard(.interactively)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(Color(.systemBackground), ignoresSafeAreaEdges: .bottom)
+        .background(Color(.systemGray6), ignoresSafeAreaEdges: .top)
+
         .task(id: reloadID) {
-            if let requestedCurrency, requestedCurrency != viewModel.selectedCurrency {
+            if let requestedCurrency,
+               requestedCurrency != viewModel.selectedCurrency {
                 await viewModel.selectCurrency(requestedCurrency)
+            } else if viewModel.rateExpiresAt != nil {
+                await viewModel.refreshRate()
             } else {
                 await viewModel.load()
             }
         }
+        .task(id: viewModel.rateExpiresAt) {
+            viewModel.updateRateFreshness()
+
+            guard let expiresAt = viewModel.rateExpiresAt else { return }
+
+            let remainingTime = expiresAt.timeIntervalSinceNow
+
+            guard remainingTime > 0 else { return }
+
+            do {
+                try await Task.sleep(for: .seconds(remainingTime))
+                try Task.checkCancellation()
+            } catch {
+                return
+            }
+
+            viewModel.updateRateFreshness()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                viewModel.updateRateFreshness()
+            }
+        }
         .sheet(isPresented: $isCurrencyPickerPresented) {
-            CurrencyPickerView(
-                currencies: viewModel.currencies,
-                selectedCurrency: viewModel.selectedCurrency
-            ) { currency in
+            CurrencyPickerView(currencies: viewModel.currencies, selectedCurrency: viewModel.selectedCurrency) { currency in
                 isCurrencyPickerPresented = false
                 if currency != viewModel.selectedCurrency {
                     requestedCurrency = currency
@@ -54,6 +80,7 @@ struct ExchangeView: View {
             ])
             .presentationDragIndicator(.visible)
             .presentationCornerRadius(Constants.pickerCornerRadius)
+            .presentationBackground(Color(.systemBackground))
         }
     }
     
@@ -143,8 +170,26 @@ struct ExchangeView: View {
                 Color(.systemGray6)
                 Color(.systemBackground)
             }
+
             Divider()
-            HStack(spacing: 12) {
+
+            Group {
+                if viewModel.isLoading {
+                    ProgressView("Loading rates")
+                } else {
+                    Text(viewModel.exchangeRateText.isEmpty ? "Rate unavailable" : viewModel.exchangeRateText)
+                }
+            }
+            .font(.system(size: 16))
+            .lineLimit(1)
+            .minimumScaleFactor(0.65)
+            .foregroundStyle(Color.brandGreen)
+            .padding(.horizontal, Constants.rateHorizontalPadding)
+            .padding(.vertical, Constants.rateVerticalPadding)
+            .background(Capsule().fill(Color(.systemBackground)))
+            .overlay(Capsule().stroke(Color(.systemGray4), lineWidth: 1))
+
+            HStack {
                 Button {
                     viewModel.swap()
                 } label: {
@@ -158,26 +203,44 @@ struct ExchangeView: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Swap currencies")
 
-                Group {
-                    if viewModel.isLoading {
-                        ProgressView("Loading rates")
-                    } else {
-                        Text(viewModel.exchangeRateText.isEmpty ? "Rate unavailable" : viewModel.exchangeRateText)
-                    }
-                }
-                .font(.system(size: 16))
-                .lineLimit(1)
-                .minimumScaleFactor(0.65)
-                .foregroundStyle(Color.brandGreen)
-                .padding(.horizontal, Constants.rateHorizontalPadding)
-                .padding(.vertical, Constants.rateVerticalPadding)
-                .background(Capsule().fill(Color(.systemBackground)))
-                .overlay(Capsule().stroke(Color(.systemGray4), lineWidth: 1))
-                .frame(maxWidth: .infinity)
+                Spacer()
             }
             .padding(.horizontal, Constants.swapButtonLeadingPadding)
         }
         .frame(height: Constants.exchangeInfoHeight)
+    }
+    
+    private var rateWarning: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Text("Rate may be outdated")
+                .foregroundStyle(.secondary)
+
+            Spacer()
+
+            Button("Refresh") {
+                reloadID += 1
+            }
+            .disabled(viewModel.isLoading)
+        }
+        .font(.footnote)
+        .padding(.horizontal, Constants.horizontalPadding)
+        .padding(.top, 4)
+    }
+    
+    private func networkError(_ message: String) -> some View {
+        VStack(spacing: 6) {
+            Text(message)
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.secondary)
+
+            Button("Try again") {
+                reloadID += 1
+            }
+            .disabled(viewModel.isLoading)
+        }
+        .font(.footnote)
+        .padding(.horizontal, Constants.horizontalPadding)
+        .padding(.top, 4)
     }
 }
 
@@ -188,7 +251,7 @@ struct ExchangeCurrencyRow: View {
     let sign: String
 
     @Binding var amount: String
-    @FocusState private var isAmountFocused: Bool
+    @State private var isAmountFocused = false
 
     var showsCurrencySelector = false
     var onCurrencyTap: (() -> Void)?
@@ -210,11 +273,7 @@ struct ExchangeCurrencyRow: View {
             currencyTitle
 
             HStack(spacing: 4) {
-                CurrencyFlagView(
-                    imageName: flagImageName,
-                    size: Constants.flagSize,
-                    showsBorder: false
-                )
+                CurrencyFlagView(imageName: flagImageName, size: Constants.flagSize, showsBorder: false)
 
                 Text(subtitle)
                     .font(.caption2)
@@ -252,50 +311,219 @@ struct ExchangeCurrencyRow: View {
         }
         .foregroundStyle(.primary)
     }
-
+    
     private var amountField: some View {
-        HStack(spacing: Constants.amountSpacing) {
-            Text("\(sign) $")
-                .font(.system(size: 32, weight: .medium))
-                .foregroundStyle(amount.isEmpty ? .secondary : .primary)
-                .fixedSize()
+        GeometryReader { geometry in
+            let prefix = "\(sign) $"
+            let prefixWidth = textWidth(prefix, fontSize: Constants.amountMaximumFontSize)
+            let availableWidth = max(1, geometry.size.width - prefixWidth - Constants.amountSpacing)
+            let presentation = amountPresentation(availableWidth: availableWidth)
 
-            // Measure the amount within the available width to keep the sign beside it.
-            Text(amount.isEmpty ? "0" : amount)
-                .font(.system(size: 32, weight: .medium))
-                .lineLimit(1)
-                .hidden()
-                .overlay {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        // Full text sets the scrollable width; the outer text bounds the viewport.
-                        Text(amount.isEmpty ? "0" : amount)
-                            .font(.system(size: 32, weight: .medium))
-                            .fixedSize(horizontal: true, vertical: false)
-                            .hidden()
-                            .overlay {
-                                TextField("0", text: $amount)
-                                    .textFieldStyle(.plain)
-                                    .keyboardType(.decimalPad)
-                                    .multilineTextAlignment(.trailing)
-                                    .font(.system(size: 32, weight: .medium))
-                                    .frame(minWidth: 0, maxWidth: .infinity)
-                                    .focused($isAmountFocused)
-                                    .accessibilityLabel("\(currency) amount")
-                                    .toolbar {
-                                        if isAmountFocused {
-                                            ToolbarItemGroup(placement: .keyboard) {
-                                                Spacer()
-                                                Button("Done") { isAmountFocused = false }
-                                            }
-                                        }
-                                    }
-                            }
-                    }
-                    .defaultScrollAnchor(.trailing)
-                    .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+            HStack(alignment: .firstTextBaseline, spacing: Constants.amountSpacing) {
+                Text(prefix)
+                    .font(.system(size: presentation.fontSize, weight: .medium))
+                    .foregroundStyle(amount.isEmpty ? Color.secondary : Color.primary)
+                    .fixedSize()
+
+                AmountTextField(
+                    text: $amount,
+                    isFocused: $isAmountFocused,
+                    fontSize: presentation.fontSize,
+                    currency: currency
+                )
+                .frame(width: presentation.width, height: Constants.amountFieldHeight)
+                .alignmentGuide(.firstTextBaseline) { dimensions in
+                    let font = UIFont.systemFont(ofSize: presentation.fontSize, weight: .medium)
+
+                    return (dimensions.height - font.lineHeight) / 2 + font.ascender
                 }
+                .overlay(alignment: .trailing) {
+                    if !isAmountFocused {
+                        Text(presentation.text)
+                            .font(.system(size: presentation.fontSize, weight: .medium))
+                            .foregroundStyle(amount.isEmpty ? Color.secondary : Color.primary)
+                            .lineLimit(1)
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
+                }
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height, alignment: .topTrailing)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                isAmountFocused = true
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .trailing)
+        .frame(height: Constants.amountFieldHeight)
+        .frame(maxWidth: .infinity)
+    }
+
+    private func amountPresentation(availableWidth: CGFloat) -> (text: String, fontSize: CGFloat, width: CGFloat) {
+        let fullText = amount.isEmpty ? "0" : amount
+        let textPadding: CGFloat = 2
+        let usableWidth = max(1, availableWidth - textPadding)
+
+        let maximumTextWidth = textWidth(fullText, fontSize: Constants.amountMaximumFontSize)
+
+        let fittedFontSize = min(
+            Constants.amountMaximumFontSize,
+            max(Constants.amountMinimumFontSize, Constants.amountMaximumFontSize * usableWidth / max(maximumTextWidth, 1))
+        )
+
+        let needsScientificNotation =
+            !isAmountFocused
+            && textWidth(fullText, fontSize: Constants.amountMinimumFontSize) > usableWidth
+
+        let displayedText = needsScientificNotation ? scientificAmount(fullText) : fullText
+        let fontSize = needsScientificNotation ? Constants.amountMinimumFontSize : fittedFontSize
+        let width = min(availableWidth, textWidth(displayedText, fontSize: fontSize) + textPadding)
+
+        return (text: displayedText, fontSize: fontSize, width: width)
+    }
+
+    private func textWidth(_ text: String, fontSize: CGFloat) -> CGFloat {
+        let font = UIFont.systemFont(ofSize: fontSize, weight: .medium)
+
+        return ceil((text as NSString).size(withAttributes: [.font: font]).width)
+    }
+
+    private func scientificAmount(_ text: String) -> String {
+        guard let value = Decimal(string: text, locale: Locale(identifier: "en_US_POSIX")), !value.isNaN else {
+            return text
+        }
+
+        let formatter = NumberFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.numberStyle = .scientific
+        formatter.exponentSymbol = "e"
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 2
+
+        return formatter.string(from: NSDecimalNumber(decimal: value)) ?? text
+    }
+}
+
+private struct AmountTextField: UIViewRepresentable {
+    @Binding var text: String
+    @Binding var isFocused: Bool
+
+    let fontSize: CGFloat
+    let currency: String
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(parent: self)
+    }
+
+    func makeUIView(context: Context) -> UITextField {
+        let textField = UITextField()
+        textField.delegate = context.coordinator
+        textField.borderStyle = .none
+        textField.textAlignment = .right
+        textField.keyboardType = .decimalPad
+
+        textField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+
+        textField.addTarget(
+            context.coordinator,
+            action: #selector(Coordinator.textChanged(_:)),
+            for: .editingChanged
+        )
+
+        context.coordinator.textField = textField
+
+        let toolbar = UIToolbar()
+        toolbar.items = [
+            UIBarButtonItem(barButtonSystemItem: .flexibleSpace, target: nil, action: nil),
+            UIBarButtonItem(title: "Done", style: .done, target: context.coordinator, action: #selector(Coordinator.done))
+        ]
+        toolbar.sizeToFit()
+        textField.inputAccessoryView = toolbar
+
+        return textField
+    }
+
+    func updateUIView(_ uiView: UITextField, context: Context) {
+        context.coordinator.parent = self
+
+        let textChanged = uiView.text != text
+
+        if textChanged {
+            uiView.text = text
+        }
+
+        // Font of active field updating here
+        let font = UIFont.systemFont(ofSize: fontSize, weight: .medium)
+        let color: UIColor = isFocused ? .label : .clear
+
+        if uiView.font != font {
+            uiView.font = font
+        }
+        uiView.textColor = color
+
+        if uiView.isEditing {
+            var attributes = uiView.typingAttributes ?? [:]
+            attributes[.font] = font
+            attributes[.foregroundColor] = color
+            uiView.typingAttributes = attributes
+        }
+
+        uiView.attributedPlaceholder = NSAttributedString(
+            string: "0",
+            attributes: [
+                .font: font,
+                .foregroundColor: isFocused ? UIColor.secondaryLabel : UIColor.clear
+            ]
+        )
+
+        uiView.accessibilityLabel = "\(currency) amount"
+
+        if isFocused != uiView.isFirstResponder {
+            let coordinator = context.coordinator
+
+            DispatchQueue.main.async { [weak uiView] in
+                guard let uiView else { return }
+
+                if coordinator.parent.isFocused {
+                    uiView.becomeFirstResponder()
+                } else {
+                    uiView.resignFirstResponder()
+                }
+            }
+        }
+    }
+
+    final class Coordinator: NSObject, UITextFieldDelegate {
+        var parent: AmountTextField
+        weak var textField: UITextField?
+
+        init(parent: AmountTextField) {
+            self.parent = parent
+        }
+
+        @objc func textChanged(_ textField: UITextField) {
+            parent.text = textField.text ?? ""
+
+            // We apply normalization, or else we discard the model immediately
+            if textField.text != parent.text {
+                textField.text = parent.text
+            }
+        }
+
+        func textFieldDidBeginEditing(_ textField: UITextField) {
+            if !parent.isFocused {
+                parent.isFocused = true
+            }
+        }
+
+        func textFieldDidEndEditing(_ textField: UITextField) {
+            if parent.isFocused {
+                parent.isFocused = false
+            }
+        }
+
+        @objc func done() {
+            textField?.resignFirstResponder()
+        }
     }
 }
 
@@ -328,5 +556,9 @@ private extension ExchangeCurrencyRow {
         static let subtitleTopPadding: CGFloat = 10
         static let flagSize: CGFloat = 14
         static let amountSpacing: CGFloat = 2
+        
+        static let amountMaximumFontSize: CGFloat = 32
+        static let amountMinimumFontSize: CGFloat = 16
+        static let amountFieldHeight: CGFloat = 44
     }
 }
