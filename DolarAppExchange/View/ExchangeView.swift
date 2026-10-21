@@ -216,11 +216,21 @@ struct ExchangeView: View {
                 .foregroundStyle(.secondary)
 
             Spacer()
-
-            Button("Refresh") {
+            
+            Button {
                 reloadID += 1
+            } label: {
+                Text("Refresh")
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(Color.brandGreen, in: Capsule())
             }
+            .buttonStyle(.plain)
             .disabled(viewModel.isLoading)
+            .opacity(viewModel.isLoading ? 0.5 : 1)
+            
         }
         .font(.footnote)
         .padding(.horizontal, Constants.horizontalPadding)
@@ -233,10 +243,20 @@ struct ExchangeView: View {
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
 
-            Button("Try again") {
+            Button {
                 reloadID += 1
+            } label: {
+                Text("Try again")
+                    .font(.footnote.weight(.medium))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(Color.brandGreen, in: Capsule())
             }
+            .buttonStyle(.plain)
             .disabled(viewModel.isLoading)
+            .opacity(viewModel.isLoading ? 0.5 : 1)
+            .padding(.top, 4)
         }
         .font(.footnote)
         .padding(.horizontal, Constants.horizontalPadding)
@@ -397,7 +417,24 @@ struct ExchangeCurrencyRow: View {
             && textWidth(displayText, fontSize: Constants.amountMinimumFontSize) > usableWidth
 
         let displayedText = needsScientificNotation ? scientificAmount(fullText) : displayText
-        let fontSize = needsScientificNotation ? Constants.amountMinimumFontSize : fittedFontSize
+
+        let fontSize: CGFloat
+
+        if needsScientificNotation {
+            let scientificTextWidth = textWidth(displayedText, fontSize: Constants.amountMaximumFontSize)
+
+            fontSize = min(
+                Constants.amountMaximumFontSize,
+                max(
+                    Constants.amountMinimumFontSize,
+                    Constants.amountMaximumFontSize
+                        * usableWidth / max(scientificTextWidth, 1)
+                )
+            )
+        } else {
+            fontSize = fittedFontSize
+        }
+        
         let width = min(availableWidth, textWidth(displayedText, fontSize: fontSize) + textPadding)
 
         return (text: displayedText, fontSize: fontSize, width: width)
