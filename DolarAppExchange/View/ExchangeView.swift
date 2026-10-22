@@ -15,18 +15,12 @@ struct ExchangeView: View {
             topSection
             exchangeInfo
             bottomSection
-            
-            if let message = viewModel.errorMessage {
-                networkError(message)
-            } else if viewModel.isRateStale {
-                rateWarning
-            } else if !viewModel.isLoading && viewModel.exchangeRateText.isEmpty {
-                Button("Load exchange rates") {
-                    reloadID += 1
+                .overlay(alignment: .bottom) {
+                    statusMessage
+                        .alignmentGuide(.bottom) { dimensions in
+                            dimensions[.top]
+                        }
                 }
-                .font(.footnote)
-                .padding(.top, 4)
-            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(Color(.systemBackground), ignoresSafeAreaEdges: .bottom)
@@ -211,12 +205,11 @@ struct ExchangeView: View {
     }
     
     private var rateWarning: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
+        VStack(spacing: 6) {
             Text("Rate may be outdated")
+                .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
 
-            Spacer()
-            
             Button {
                 reloadID += 1
             } label: {
@@ -230,9 +223,10 @@ struct ExchangeView: View {
             .buttonStyle(.plain)
             .disabled(viewModel.isLoading)
             .opacity(viewModel.isLoading ? 0.5 : 1)
-            
+            .padding(.top, 4)
         }
         .font(.footnote)
+        .frame(maxWidth: .infinity)
         .padding(.horizontal, Constants.horizontalPadding)
         .padding(.top, 4)
     }
@@ -261,6 +255,21 @@ struct ExchangeView: View {
         .font(.footnote)
         .padding(.horizontal, Constants.horizontalPadding)
         .padding(.top, 4)
+    }
+    
+    @ViewBuilder
+    private var statusMessage: some View {
+        if let message = viewModel.errorMessage {
+            networkError(message)
+        } else if viewModel.isRateStale {
+            rateWarning
+        } else if !viewModel.isLoading
+                    && viewModel.exchangeRateText.isEmpty {
+            Button("Load exchange rates") {
+                reloadID += 1
+            }
+            .font(.footnote)
+        }
     }
 }
 
